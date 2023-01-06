@@ -1,25 +1,59 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-
+import { apiHost } from '@/config'
 const routes = [
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('./../views/LoginView.vue')
+  },
   {
     path: '/',
     name: 'home',
-    component: HomeView
+    component: () => import('./../views/HomeView.vue'),
+    children: [
+      {
+        path: 'collection/:collectID(\\d+)',
+        name: 'collectionInfo',
+        component: () => import('../views/CollectionView.vue'),
+        props: true
+      },
+      {
+        path: 'collection',
+        name: 'listInfo',
+        component: () => import('./../views/ListView.vue'),
+        props: true
+      },
+      {
+        path: 'gallery/:collectID(\\d+)/:galleryID(\\d+)/:pageNum(\\d+)',
+        name: 'page',
+        component: () => import('./../views/PageView.vue'),
+        props: true
+      },
+      {
+        path: 'task',
+        name: 'task',
+        component: () => import('./../views/TaskView.vue'),
+        props: true
+      }
+    ]
   },
   {
-    path: '/about',
-    name: 'about',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue')
+    path: '/:pathMatch(.*)',
+    redirect: '/',
+    hidden: true
   }
 ]
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes
+})
+
+router.beforeEach(async (to, from) => {
+  const result = await (await fetch(apiHost + '/auth/check', { credentials: 'include' })).json()
+  if (!result.data.isLogin && to.name !== 'login') {
+    return { name: 'login' }
+  }
 })
 
 export default router
